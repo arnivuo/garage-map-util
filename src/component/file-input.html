@@ -1,0 +1,218 @@
+
+<div class="form-group">
+  <label>{{label}}</label>
+  <form class="file-drop-area" ref:form>
+    <div class="file-drop-area__input">
+      <img class="file-drop-area__icon" src="./images/ic_upload.svg">
+      {{#if multiple}}
+      <input class="file-drop-area__file" type="file" name="{{id}}" id="{{id}}" multiple />
+      {{else}}
+      <input class="file-drop-area__file" type="file" name="{{id}}" id="{{id}}" />
+      {{/if}}
+      <label class="file-drop-area__label" for="{{id}}">{{{dropLabel}}}</label>
+      <button class="file-drop-area__button" type="submit">Upload</button>
+    </div>
+    <div class="file-drop-area__uploading">Uploading&hellip;</div>
+    <div class="file-drop-area__success">Done!</div>
+    <div class="file-drop-area__error">Error! <span></span>.</div>
+  </form>
+</div>
+
+
+<script>
+
+const isAdvanced = function() {
+  const div = document.createElement('div');
+  return (('draggable' in div) || ('ondragstart' in div && 'ondrop' in div)) && 'FormData' in window && 'FileReader' in window;
+}();
+
+const on = (element, type, handler) => 
+  type.split(' ').forEach(t => element.addEventListener(t, handler));
+
+const init = (component) => {
+  if (isAdvanced) {
+    const { form } = component.refs;
+    on(form, 'drag dragstart dragend dragover dragenter dragleave drop', e => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    on(form, 'dragover dragenter', () => form.classList.add('is-dragover'));
+    on(form, 'dragleave dragend drop', () => form.classList.remove('is-dragover'));
+    on(form, 'drop', e => {
+      const { files } = e.dataTransfer;
+      component.set({ files: files });
+      component.fire('change', { files });
+    });
+    
+    form.classList.add('file-drop-area--advanced');
+  }
+};
+
+const map = (xs, acc) => Array.prototype.map.call(xs, acc);
+
+export default {
+  onrender() {
+    init(this);
+  },
+  data() {
+    return {
+      name: '',
+      files: [],
+      label: 'foo',
+      multiple: false
+    };
+  },
+  computed: {
+    id: name => `file-${name}`,
+    dropLabel: files => {
+      const count = files.length;
+      if (count == 0)      return '<strong>Choose a file</strong><span class="file-drop-area__dragndrop"> or drag it here</span>.';
+      else if (count <= 2) return map(files, f => f.name).join('<br>');
+      else /* count > 1 */ return `${count} files selected`;
+    }
+  }
+};
+
+</script>
+
+
+<style>
+.file-drop-area {
+	font-size: 1.25em; /* 20 */
+	background-color: #c8dadf;
+	position: relative;
+	padding: 100px 20px;
+  text-align: center;
+}
+
+.file-drop-area--advanced {
+	outline: 2px dashed #92b0b3;
+	outline-offset: -10px;
+
+	-webkit-transition: outline-offset .15s ease-in-out, background-color .15s linear;
+	transition: outline-offset .15s ease-in-out, background-color .15s linear;
+}
+
+.file-drop-area.is-dragover {
+	outline-offset: -20px;
+	outline-color: #c8dadf;
+	background-color: #fff;
+}
+        
+.file-drop-area__dragndrop,
+.file-drop-area__icon {
+	display: none;
+}
+.file-drop-area--advanced .file-drop-area__dragndrop {
+	display: inline;
+}
+.file-drop-area--advanced .file-drop-area__icon {
+	width: 100%;
+	height: 80px;
+	opacity: 0.25;
+	display: block;
+	margin-bottom: 40px;
+}
+
+.file-drop-area.is-uploading .file-drop-area__input,
+.file-drop-area.is-success .file-drop-area__input,
+.file-drop-area.is-error .file-drop-area__input {
+	visibility: hidden;
+}
+
+.file-drop-area__uploading,
+.file-drop-area__success,
+.file-drop-area__error
+{
+	display: none;
+}
+
+.file-drop-area.is-uploading .file-drop-area__uploading,
+.file-drop-area.is-success .file-drop-area__success,
+.file-drop-area.is-error .file-drop-area__error {
+	display: block;
+	position: absolute;
+	top: 50%;
+	right: 0;
+	left: 0;
+
+	-webkit-transform: translateY( -50% );
+	transform: translateY( -50% );
+}
+.file-drop-area__uploading {
+	font-style: italic;
+}
+.file-drop-area__success {
+	-webkit-animation: appear-from-inside .25s ease-in-out;
+	animation: appear-from-inside .25s ease-in-out;
+}
+
+@-webkit-keyframes appear-from-inside {
+	from	{ -webkit-transform: translateY( -50% ) scale( 0 ); }
+	75%		{ -webkit-transform: translateY( -50% ) scale( 1.1 ); }
+	to		{ -webkit-transform: translateY( -50% ) scale( 1 ); }
+}
+@keyframes appear-from-inside {
+	from	{ transform: translateY( -50% ) scale( 0 ); }
+	75%		{ transform: translateY( -50% ) scale( 1.1 ); }
+	to		{ transform: translateY( -50% ) scale( 1 ); }
+}
+
+.file-drop-area__restart {
+	font-weight: 700;
+}
+.file-drop-area__restart:focus,
+.file-drop-area__restart:hover {
+	color: #39bfd3;
+}
+
+.js .file-drop-area__file {
+	width: 0.1px;
+	height: 0.1px;
+	opacity: 0;
+	overflow: hidden;
+	position: absolute;
+	z-index: -1;
+}
+.js .file-drop-area__label {
+	max-width: 80%;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	cursor: pointer;
+	display: inline-block;
+	overflow: hidden;
+  font-weight: 300;
+}
+
+.js .file-drop-area__label:hover strong,
+.file-drop-area__file:focus + .file-drop-area__label strong,
+.file-drop-area__file.has-focus + .file-drop-area__label strong {
+	color: #39bfd3;
+}
+.js .file-drop-area__file:focus + .file-drop-area__label,
+.js .file-drop-area__file.has-focus + .file-drop-area__label {
+	outline: 1px dotted #000;
+	outline: -webkit-focus-ring-color auto 5px;
+}
+
+.no-js .file-drop-area__label {
+	display: none;
+}
+
+.no-js .file-drop-area__button {
+	display: block;
+}
+.file-drop-area__button {
+	font-weight: 700;
+	color: #e5edf1;
+	background-color: #39bfd3;
+	display: none;
+	padding: 8px 16px;
+	margin: 40px auto 0;
+}
+.file-drop-area__button:hover,
+.file-drop-area__button:focus {
+	background-color: #0f3c4b;
+}
+
+</style>

@@ -1,0 +1,27 @@
+<div class="form-group">
+  <div class="input-group">
+    <span class="input-group-addon" id="input-${name}">{{label}}</span>
+    <input class="form-control input-number input-sm" type="number" bind:value step={{step}} aria-describedby="input-${name}">
+  </div>
+</div>
+
+<script>
+
+export default {
+  data() {
+    return {
+      label: '[label]',
+      name: '[name]',
+      value: 1,
+      step: 1
+    };
+  }
+};
+
+</script>
+
+<style>
+.input-number {
+  text-align: right;
+}
+</style>

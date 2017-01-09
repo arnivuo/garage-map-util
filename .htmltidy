@@ -1,0 +1,17 @@
+{
+  "markup": true,
+  "output-xml": false,
+  "show-warnings": true,
+  "numeric-entities": false,
+  "quote-marks": false,
+  "quote-nbsp": true,
+  "quote-ampersand": false,
+  "break-before-br": false,
+  "preserve-entities": true,
+  "uppercase-tags": false,
+  "uppercase-attributes": false,
+  "indent": "auto",
+  "indent-with-tabs": false,
+  "indent-attributes": true,
+  "wrap": 200
+}

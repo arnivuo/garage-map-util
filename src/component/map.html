@@ -1,0 +1,142 @@
+<div class="map">
+  {{#if src}}
+    <img class="map__image" src="{{src}}" on:load="updateDimension(this)" />
+    {{#if dimensions}}
+    <div class="map__poi-layer" style="{{poiLayerStyles}}">
+      {{#each spots as spot}}
+      <div class="map__poi" style="{{poiStyles(spot, dimensions)}}">
+        <div class="poi__marker"></div>
+        <div class="poi__label">
+          {{#if spot.name}}{{spot.name}}<br />{{/if}}
+          x:{{spot.valueX || '-'}} y:{{spot.valueY || '-'}}
+        </div>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+  {{/if}}
+</div>
+
+<script>
+
+const getDimensions = img => {
+  const { width, height } = img;
+  return width && height ? { width, height } : null;
+};
+
+export default {
+  onrender() {
+    this.observe('src', ( newValue, oldValue ) => {
+      if (newValue != oldValue) {
+        this.set({ calculateDimensions: true });
+      }
+    });
+  },
+  data() {
+    return {
+      src: '',
+      spots: [],
+      dimensions: null,
+      calculateDimensions: false,
+      modifiers: {
+        scaleHorizontal: 1.0,
+        scaleVertical: 1.0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    };
+  },
+  computed: {
+    poiLayerStyles: (modifiers, dimensions) => {
+      if (dimensions) {
+        const { scaleHorizontal, scaleVertical } = modifiers;
+        const { width, height } = dimensions;
+        const modWidth = width * scaleHorizontal;
+        const modHeight = height * scaleVertical;
+        return `width: ${width}px; height: ${height}px;`;
+      }
+      return '';
+    }
+  },
+  helpers: {
+    poiStyles: (spot, dimensions) => {
+      // const x = spot.x(dimensions.width);
+      // const y = spot.y(dimensions.height);
+      return `left: ${spot.x}px; top: ${spot.y}px;`;
+    }
+  },
+  methods: {
+    updateDimension(img) {
+      if (this.get('calculateDimensions')) {
+        const dimensions = getDimensions(img);
+        this.set({ dimensions, calculateDimensions: false });
+        this.fire('loaded', { dimensions });
+      }
+    }
+  }
+};
+
+</script>
+
+<style>
+
+.map {
+  position: relative;
+  min-width: 160px;
+  min-height: 160px;
+  background-image: url(./images/im_grid.svg);
+}
+
+.map__image {
+  outline: 2px dashed #fb2;
+}
+
+.map__poi-layer {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  outline: 2px dotted #c00;
+}
+
+.map__poi {
+  position: absolute;
+  padding: 10px;
+  transform: translate(-10px, -10px);
+}
+
+.poi__marker {
+  position: absolute;;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  background-color: #c00;
+  border-radius: 50%;
+  opacity: .75;
+}
+
+.poi__label {
+  position: absolute;
+  padding: 2px 3px;
+  left: 15px;
+  border-top: 1px solid #900;
+  color: #900;
+  font-size: .7857em;
+  line-height: 1;
+  opacity: .25;
+  transition: background-color .15s, color .15s, opacity .15s;
+}
+
+.map__poi:hover .poi__marker {
+  background-color: #f44;
+}
+
+.map__poi:hover .poi__label {
+  background-color: rgba(0,0,0,0.25);
+  color: #fff;
+  opacity: 0.8;
+  text-shadow: 0 0 5px #000;
+  z-index: 100;
+}
+
+</style>

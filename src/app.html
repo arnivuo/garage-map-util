@@ -1,0 +1,139 @@
+<div class="container">
+  <div class="row">
+    <div class="col-md-4">
+      <h3>Inputs</h3>
+      <FileInput on:change="handleFiles(event.files)" label="Map and CSV files" name="input" />
+      
+      <label>Scale</label>
+      <div class="row">
+        <div class="col-sm-6">
+          <NumberInput bind:value="scaleH" label="horizontal" name="horz" step=".1" />
+        </div>
+        <div class="col-sm-6">
+          <NumberInput bind:value="scaleV" label="vertical" name="vert" step=".1" />
+        </div>
+      </div>
+      
+      <label>Offset</label>
+      <div class="row">
+        <div class="col-sm-6">
+          <NumberInput bind:value="offsetX" label="X" name="x" />
+        </div>
+        <div class="col-sm-6">
+          <NumberInput bind:value="offsetY" label="Y" name="y" />
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <h3>View</h3>
+      <label>foo</label>
+      <Map src="{{mapSrc}}" spots="{{spots}}" on:loaded="set({ mapDimensions: event.dimensions })" />
+    </div>
+    <div class="col-sm-12">
+      <hr />
+      <p class="text-center text-muted">
+        Garage Map Util &mdash; HyperIn Inc.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+
+import FileInput from './component/file-input';
+import NumberInput from './component/number-input';
+import Map from './component/map';
+import Papa from 'papaparse';
+
+const forEach = (xs, acc) => Array.prototype.forEach.call(xs, acc);
+
+export default {
+  data() {
+    return {
+      scaleH: 1.0,
+      scaleV: 1.0,
+      offsetX: 0,
+      offsetY: 0,
+      mapSrc: '',
+      mapDimensions: null,
+      csvData: []
+    };
+  },
+  computed: {
+    modifiers: (scaleH, scaleV, offsetX, offsetY) => {
+      return {
+        scaleH: parseFloat(scaleH),
+        scaleV: parseFloat(scaleV),
+        offsetX: parseFloat(offsetX),
+        offsetY: parseFloat(offsetY)
+      };
+    },
+    spots: (csvData, modifiers, mapDimensions) => {
+      
+      if (csvData.length == 0 || !mapDimensions) return [];
+      
+      const { scaleH, scaleV, offsetX, offsetY } = modifiers;
+      const { width, height } = mapDimensions;
+      const toPixel = (max, value, scale, offset) => max * value * scale + offset;
+      
+      return csvData.map(([name, valueX, valueY]) => {
+        return {
+          name,
+          valueX,
+          valueY,
+          x: toPixel(width, valueX, scaleH, offsetX),
+          y: toPixel(height, valueY, scaleV, offsetY)
+        };
+      });
+    }
+  },
+  methods: {
+    handleFiles(files) {
+      const component = this;
+      forEach(files, file => {
+        const ext = file.name.split('.').reverse()[0].toLowerCase();
+        
+        switch (ext) {
+        case 'csv':
+          component.handleCSVFile(file);
+          break;
+        case 'jpg':
+        case 'jpeg':
+        case 'png':
+        case 'svg':
+          component.handleMapFile(file);
+          break;
+        default:
+          console.error(`Unknown file ${file.name}`);
+        }
+      });
+    },
+    handleCSVFile(file) {
+      const component = this;
+      Papa.parse(file, {
+        complete(results) {
+          const { errors, data } = results;
+          if (errors && errors.length) {
+            console.error('CSV parsing errors\n', errors);
+          }
+          else if (data) {
+            component.set({ csvData: data });
+          }
+        }
+      });
+    },
+    handleMapFile(file) {
+      const component = this;
+      const reader = new FileReader();
+      reader.onload = event => component.set({ mapSrc: event.target.result });
+      reader.readAsDataURL(file);
+    }
+  },
+  components: {
+    FileInput,
+    NumberInput,
+    Map
+  }
+};
+
+</script>
