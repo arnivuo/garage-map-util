@@ -45,9 +45,18 @@ import NumberInput from './component/number-input';
 import Map from './component/map';
 import Papa from 'papaparse';
 
-const forEach = (xs, acc) => Array.prototype.forEach.call(xs, acc);
+import { forEach, getFileExtension } from './helpers';
+import * as storage from './storage';
 
 export default {
+  onrender() {
+    this.observe('modifiers', ( newValue, oldValue ) => {
+      if (newValue != oldValue) {
+        const id = this.get('storageId');
+        if (id) storage.save(id, newValue);
+      }
+    });
+  },
   data() {
     return {
       scaleH: 1.0,
@@ -55,8 +64,11 @@ export default {
       offsetX: 0,
       offsetY: 0,
       mapSrc: '',
+      mapFile: null,
       mapDimensions: null,
-      csvData: []
+      csvData: [],
+      csvFile: null,
+      storageId: null
     };
   },
   computed: {
@@ -91,7 +103,7 @@ export default {
     handleFiles(files) {
       const component = this;
       forEach(files, file => {
-        const ext = file.name.split('.').reverse()[0].toLowerCase();
+        const ext = getFileExtension(file);
         
         switch (ext) {
         case 'csv':
@@ -107,6 +119,14 @@ export default {
           console.error(`Unknown file ${file.name}`);
         }
       });
+      
+      // Get id for file combination and check if there's saved modifiers
+      const id = storage.getId(files);
+      const data = storage.load(id);
+      component.set({ storageId: id });
+      if (data) {
+        component.set(data);
+      }
     },
     handleCSVFile(file) {
       const component = this;

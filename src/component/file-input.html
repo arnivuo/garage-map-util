@@ -48,7 +48,7 @@ const init = (component) => {
   }
 };
 
-const map = (xs, acc) => Array.prototype.map.call(xs, acc);
+import { map } from '../helpers';
 
 export default {
   onrender() {
